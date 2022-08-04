@@ -228,18 +228,21 @@ function addRole(){
 }
 
 var empList=[];
-function employeeList(){
-    db.promise().query('SELECT * FROM employee')
+async function employeeList(){
+    console.log("ASDF");
+    return  db.promise().query('SELECT * FROM employee')
     .then(([res])=>{
+        let empList2 = [];
         for(var i=0; i<res.length;i++){
-            empList.push(res[i].last_name);
+            empList2.push(res[i].last_name);
         }
+        return empList2;
     })
     .catch(error=>{
         throw error;
     })
-    console.log(empList);
-    return empList;
+    // console.log(empList);
+    // return empList;
     // db.promise().query('SELECT * FROM employee', function(err,res){
     //     if(err){
     //         res.status(400).json({message: 'error!'});
@@ -333,27 +336,13 @@ function addEmployee(){
 }
 
 async function updateEmployee(){
-    var emp= [];
-    function myemployeeList(){
-        db.promise().query('SELECT * FROM employee')
-        .then(([res])=>{
-            for(var i=0; i<res.length;i++){
-                emp.push(res[i].last_name);
-            }
-        })
-        .catch(error=>{
-            throw error;
-        })
-        console.log(emp);
-        return emp;
-    //console.log(empList);
-    }
+    let employees = await employeeList()
     inquirer.prompt([
         {
             name: 'employee',
             type: 'list',
             message: 'choose employee to update:',
-            choices: myemployeeList
+            choices: employees
         },
         {
             name: 'role',
