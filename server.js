@@ -66,7 +66,7 @@ function trackerPrompt(){
 };
 
 function viewDepartments(){
-    db.promise().query('SELECT * FROM department')
+    db.promise().query('SELECT * FROM departments')
         .then(([res])=>{
             console.table('All Departments:', res);
             trackerPrompt();
@@ -77,7 +77,7 @@ function viewDepartments(){
 }
 
 function viewRoles(){
-    db.promise().query('SELECT * FROM role')
+    db.promise().query('SELECT roles.id, roles.title, departments.name AS department, roles.salary FROM roles JOIN departments on roles.department_id=departments.id')
     .then(([res])=>{
         console.table('All Roles:', res);
         trackerPrompt();
@@ -88,7 +88,7 @@ function viewRoles(){
 }
 
 function viewEmployees(){
-    db.promise().query('SELECT * FROM employee')
+    db.promise().query("SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.name AS department, roles.salary, CONCAT(M.first_name, ' ', M.last_name) as MANAGER from employees JOIN roles ON employees.role_id=roles.id JOIN departments ON roles.department_id=departments.id LEFT JOIN employees AS M ON employees.manager_id = M.id")
     .then(([res])=>{
         console.table('All Employees:', res);
         trackerPrompt();
@@ -108,7 +108,7 @@ function addDepartment() {
         }
     )
     .then(function (answer){
-        const sql=  'INSERT INTO department (name) VALUES (?)';
+        const sql=  'INSERT INTO departments (name) VALUES (?)';
         const newDept= answer.departmentName;
         db.promise().query(sql, newDept)
         .then(([res])=>{
@@ -123,7 +123,7 @@ function addDepartment() {
 
 async function departmentList(){
     var deptList= [];
-    db.promise().query('SELECT * FROM department')
+    db.promise().query('SELECT * FROM departments')
     .then(([res])=>{
         for(var i=0; i<res.length;i++){
             deptList.push(res[i].name);
@@ -156,7 +156,7 @@ async function addRole(){
         }
     ]).then (function (answer){
         let deptIndex= departments.indexOf(answer.department);
-        const sql= 'INSERT INTO role SET?';
+        const sql= 'INSERT INTO roles SET?';
         const params= 
             {
                 title:answer.roleName,
@@ -175,22 +175,22 @@ async function addRole(){
 }
 
 async function employeeList(){
-    var empList=[];
-    db.promise().query('SELECT * FROM employee')
+    return db.promise().query('SELECT * FROM employees')
     .then(([res])=>{
+        let empList=[];
         for(var i=0; i<res.length;i++){
-            empList.push(res[i].last_name);
+            empList.push(res[i].first_name + ' ' +res[i].last_name);
         }
+        return empList;
     })
     .catch(error=>{
         throw error;
     })
-    return empList;
 }
 
 async function roleList(){
     var roles=[];
-    db.promise().query('SELECT * FROM role')
+    db.promise().query('SELECT * FROM roles')
     .then(([res])=>{
         for(var i=0; i<res.length;i++){
             roles.push(res[i].title);
@@ -218,18 +218,17 @@ async function addEmployee(){
             message: 'enter last name',
         },
         {
+            name: 'role',
+            type: 'list',
+            message: 'select role:',
+            choices: roles
+        },
+        {
             name: 'manager',
             type: 'list',
             message: 'select manager:',
             choices: employees
         },
-        {
-            name: 'role',
-            type: 'list',
-            message: 'select role:',
-            choices: roles
-        }
-
     ])
     .then (function (answer){
         let managerIndex
@@ -239,7 +238,7 @@ async function addEmployee(){
             managerIndex= employees.indexOf(answer.manager)+1;
         }
         let roleIndex=roles.indexOf(answer.role);
-        const sql= 'INSERT INTO employee SET?';
+        const sql= 'INSERT INTO employees SET?';
         const params= 
             {
                 first_name: answer.firstName,
@@ -278,8 +277,8 @@ async function updateEmployee(){
     .then (function(answer){
         let roleIndex=roles.indexOf(answer.role);
 
-        const sql= 'UPDATE employee SET role_id=? WHERE last_name=?';
-        const params= [roleIndex+1, answer.employee];
+        const sql= 'UPDATE employees SET role_id=? WHERE employees.id=?';
+        const params= [roleIndex+1, employees.indexOf(answer.employee)+1];
         db.promise().query(sql, params)
         .then(([res])=>{
             console.table('All Employees:',res);
