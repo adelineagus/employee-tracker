@@ -48,7 +48,6 @@ function trackerPrompt(){
                 addDepartment();
                 break;
             case 'Add a role':
-                console.log(departmentList());
                 addRole();
                 break;
             case 'Add an employee':
@@ -88,7 +87,7 @@ function viewRoles(){
 }
 
 function viewEmployees(){
-    db.promise().query("SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.name AS department, roles.salary, CONCAT(M.first_name, ' ', M.last_name) as MANAGER from employees JOIN roles ON employees.role_id=roles.id JOIN departments ON roles.department_id=departments.id LEFT JOIN employees AS M ON employees.manager_id = M.id")
+    db.promise().query("SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.name AS department, roles.salary, CONCAT(M.first_name, ' ', M.last_name) AS manager from employees JOIN roles ON employees.role_id=roles.id JOIN departments ON roles.department_id=departments.id LEFT JOIN employees AS M ON employees.manager_id = M.id")
     .then(([res])=>{
         console.table('All Employees:', res);
         trackerPrompt();
@@ -112,7 +111,7 @@ function addDepartment() {
         const newDept= answer.departmentName;
         db.promise().query(sql, newDept)
         .then(([res])=>{
-            console.table('All Departments:', res);
+            console.log('Added ' + newDept + ' to database');
             trackerPrompt();
         })
         .catch(error=>{
@@ -165,7 +164,7 @@ async function addRole(){
             };
         db.promise().query(sql, params)
         .then(([res])=>{
-            console.table('All Roles:',res);
+            console.log('Added '+ answer.roleName + ' to database')
             trackerPrompt();
         })
         .catch(error=>{
@@ -248,7 +247,7 @@ async function addEmployee(){
             }
         db.promise().query(sql, params)
         .then(([res])=>{
-            console.table('All Employees:',res);
+            console.log('Added '+ answer.firstName + ' '+ answer.lastName + ' to database')
             trackerPrompt();
         })
         .catch(error=>{
@@ -281,7 +280,7 @@ async function updateEmployee(){
         const params= [roleIndex+1, employees.indexOf(answer.employee)+1];
         db.promise().query(sql, params)
         .then(([res])=>{
-            console.table('All Employees:',res);
+            console.log("Updated "+ answer.employee + "'s role to database")
             trackerPrompt();
         })
         .catch(error=>{
