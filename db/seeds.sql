@@ -1,3 +1,5 @@
+/*creating seeds to populate tables*/
+
 INSERT INTO departments (name)
 VALUES 
 ('Sales'),

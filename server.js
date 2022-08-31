@@ -1,14 +1,11 @@
-const express = require('express');
+// importing packages needed
+
 const inquirer = require('inquirer');
 const mysql= require('mysql2');
 const consoleTable= require('console.table');
 const { async } = require('rxjs');
-const PORT= process.env.PORT||3001;
-const app= express();
 
-app.use(express.urlencoded({extended:false}));
-app.use(express.json());
-
+//creating connections with mysql
 const db= mysql.createConnection(
     {
         host:'localhost',
@@ -18,6 +15,7 @@ const db= mysql.createConnection(
     },
 );
 
+//display options for user to choose
 function trackerPrompt(){
     inquirer.prompt({
         name: "options",
@@ -34,6 +32,7 @@ function trackerPrompt(){
             'Exit'
         ]
     }).then (function(choice){
+        //depending on the options chosen by users, specific function will be called and run
         switch(choice.options){
             case 'View all departments':
                 viewDepartments();
@@ -64,9 +63,12 @@ function trackerPrompt(){
     })
 };
 
+//view departments table with id and names
 function viewDepartments(){
     db.promise().query('SELECT * FROM departments')
         .then(([res])=>{
+            
+            //display all departments in table
             console.table('All Departments:', res);
             trackerPrompt();
         })
@@ -75,9 +77,11 @@ function viewDepartments(){
         })
 }
 
+//view roles table with role title, role id, department name, and role salary
 function viewRoles(){
     db.promise().query('SELECT roles.id, roles.title, departments.name AS department, roles.salary FROM roles JOIN departments on roles.department_id=departments.id')
     .then(([res])=>{
+        //display all roles in table
         console.table('All Roles:', res);
         trackerPrompt();
     })
@@ -86,9 +90,11 @@ function viewRoles(){
     })
 }
 
+//view employees with employee ids, first name, last name, role title, department, salary, and employee's manager
 function viewEmployees(){
     db.promise().query("SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.name AS department, roles.salary, CONCAT(M.first_name, ' ', M.last_name) AS manager from employees JOIN roles ON employees.role_id=roles.id JOIN departments ON roles.department_id=departments.id LEFT JOIN employees AS M ON employees.manager_id = M.id")
     .then(([res])=>{
+        //display all employees in table
         console.table('All Employees:', res);
         trackerPrompt();
     })
@@ -98,6 +104,7 @@ function viewEmployees(){
 }
 
 
+//add department and its name to database
 function addDepartment() {
     inquirer.prompt(
         {
@@ -120,6 +127,7 @@ function addDepartment() {
     })
 }
 
+//generate an array of department name
 async function departmentList(){
     var deptList= [];
     db.promise().query('SELECT * FROM departments')
@@ -134,6 +142,7 @@ async function departmentList(){
     return deptList;
 }
 
+//add role, salary and department infor to database
 async function addRole(){
     let departments = await departmentList();
     inquirer.prompt([
@@ -173,6 +182,7 @@ async function addRole(){
     })
 }
 
+//generate an array of employee name
 async function employeeList(){
     return db.promise().query('SELECT * FROM employees')
     .then(([res])=>{
@@ -187,6 +197,7 @@ async function employeeList(){
     })
 }
 
+//generate an array of role names
 async function roleList(){
     var roles=[];
     db.promise().query('SELECT * FROM roles')
@@ -201,6 +212,7 @@ async function roleList(){
     return roles;
 }
 
+//add employee name, role, and manager to database
 async function addEmployee(){
     let employees = await employeeList();
     employees.push("null");
@@ -231,9 +243,12 @@ async function addEmployee(){
     ])
     .then (function (answer){
         let managerIndex
+
+        //when null is selected, managerIndex which is equal to manager_id will be null
         if(answer.manager==="null"){
             managerIndex=null;
         } else {
+            //otherwise, manager Id will be index +1 (because array starts at zero)
             managerIndex= employees.indexOf(answer.manager)+1;
         }
         let roleIndex=roles.indexOf(answer.role);
@@ -256,6 +271,7 @@ async function addEmployee(){
     })
 }
 
+//update employee by selecting employee name and new role
 async function updateEmployee(){
     let employees = await employeeList();
     let roles= await roleList();
@@ -288,14 +304,5 @@ async function updateEmployee(){
         })
     })
 }
-
-app.use((req,res)=>{
-    res.status(404).end();
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
 
 trackerPrompt();
