@@ -31,6 +31,7 @@ function trackerPrompt(){
             'Add a role',
             'Add an employee',
             'Update employee role',
+            'Exit'
         ]
     }).then (function(choice){
         switch(choice.options){
@@ -56,6 +57,8 @@ function trackerPrompt(){
             case 'Update employee role':
                 updateEmployee();
                 break;
+            case 'Exit':
+                db.end();
     
         }
         
@@ -72,16 +75,6 @@ function viewDepartments(){
             throw error;
         })
 }
-// function viewDepartments(){
-//     db.promise().query('SELECT * FROM department', (err,res)=>{
-//         if(err){
-//             res.status(400).json({message: 'error!'});
-//         } else{
-//             console.table('All Departments:', res);
-//             trackerPrompt();
-//         }
-//     })
-// }
 
 function viewRoles(){
     db.promise().query('SELECT * FROM role')
@@ -93,16 +86,6 @@ function viewRoles(){
         throw error;
     })
 }
-// function viewRoles(){
-//     db.promise().query('SELECT * FROM role', (err,res)=>{
-//         if(err){
-//             res.status(400).json({message: 'error!'});
-//         } else{
-//             console.table('All Roles:', res);
-//             trackerPrompt();
-//         }
-//     })
-// }
 
 function viewEmployees(){
     db.promise().query('SELECT * FROM employee')
@@ -115,16 +98,6 @@ function viewEmployees(){
     })
 }
 
-// function viewEmployees(){
-//     db.promise().query('SELECT * FROM employee', (err,res)=>{
-//         if(err){
-//             res.status(400).json({message: 'error!'});
-//         } else{
-//             console.table('All Employees:', res);
-//             trackerPrompt();
-//         }
-//     })
-// }
 
 function addDepartment() {
     inquirer.prompt(
@@ -145,19 +118,9 @@ function addDepartment() {
         .catch(error=>{
             throw error;
         })
-        // db.promise().query(sql, newDept, (err, res)=>{
-        //     // if (err){
-        //     //     res.status(400).json({error:err.message});
-        //     // } else{
-        //         console.table('All Departments:', res);
-        //         trackerPrompt();
-            
-                 
-        // })
     })
 }
 
-//var deptList= [];
 async function departmentList(){
     var deptList= [];
     db.promise().query('SELECT * FROM department')
@@ -170,16 +133,6 @@ async function departmentList(){
         throw error;
     })
     return deptList;
-    // db.promise().query('SELECT * FROM department', function(err,res){
-    //     if(err){
-    //         res.status(400).json({message: 'error!'});
-    //     } else{
-    //         for(var i=0; i<res.length;i++){
-    //             deptList.push(res[i].name);
-    //         }
-    //     }
-    // })
-    // return deptList;
 }
 
 async function addRole(){
@@ -210,14 +163,6 @@ async function addRole(){
                 salary:answer.salary,
                 department_id:deptIndex + 1
             };
-            // db.promise().query(sql, params, function(err,res){
-            //     if(err){
-            //         res.status(400).json({message: 'error!'});
-            //     } else{
-            //         console.table('All Roles:',res);
-            //         trackerPrompt();
-            //     }
-            // })
         db.promise().query(sql, params)
         .then(([res])=>{
             console.table('All Roles:',res);
@@ -229,35 +174,20 @@ async function addRole(){
     })
 }
 
-var empList=[];
 async function employeeList(){
-    console.log("ASDF");
-    return  db.promise().query('SELECT * FROM employee')
+    var empList=[];
+    db.promise().query('SELECT * FROM employee')
     .then(([res])=>{
-        let empList2 = [];
         for(var i=0; i<res.length;i++){
-            empList2.push(res[i].last_name);
+            empList.push(res[i].last_name);
         }
-        return empList2;
     })
     .catch(error=>{
         throw error;
     })
-    // console.log(empList);
-    // return empList;
-    // db.promise().query('SELECT * FROM employee', function(err,res){
-    //     if(err){
-    //         res.status(400).json({message: 'error!'});
-    //     } else{
-    //         for(var i=0; i<res.length;i++){
-    //             empList.push(res[i].last_name);
-    //         }
-    //     }
-    // })
-    // return empList;
+    return empList;
 }
 
-//var roles=[];
 async function roleList(){
     var roles=[];
     db.promise().query('SELECT * FROM role')
@@ -270,20 +200,11 @@ async function roleList(){
         throw error;
     })
     return roles;
-    // db.promise().query('SELECT * FROM role', function(err,res){
-    //     if(err){
-    //         res.status(400).json({message: 'error!'});
-    //     } else{
-    //         for(var i=0; i<res.length;i++){
-    //             roles.push(res[i].title);
-    //         }
-    //     }
-    // })
-    // return roles;
 }
 
 async function addEmployee(){
     let employees = await employeeList();
+    employees.push("null");
     let roles= await roleList();
     inquirer.prompt([
         {
@@ -311,7 +232,12 @@ async function addEmployee(){
 
     ])
     .then (function (answer){
-        let managerIndex= employees.indexOf(answer.manager);
+        let managerIndex
+        if(answer.manager==="null"){
+            managerIndex=null;
+        } else {
+            managerIndex= employees.indexOf(answer.manager)+1;
+        }
         let roleIndex=roles.indexOf(answer.role);
         const sql= 'INSERT INTO employee SET?';
         const params= 
@@ -319,7 +245,7 @@ async function addEmployee(){
                 first_name: answer.firstName,
                 last_name: answer.lastName,
                 role_id: roleIndex + 1,
-                manager_id: managerIndex+1
+                manager_id: managerIndex
             }
         db.promise().query(sql, params)
         .then(([res])=>{
@@ -329,14 +255,6 @@ async function addEmployee(){
         .catch(error=>{
             throw error;
         })
-        // db.promise().query(sql, params, function(err,res){
-        //     // if(err){
-        //     //     res.status(400).json({message: 'error!'});
-        //     // } else{
-        //         console.table('All Employees:',res);
-        //         trackerPrompt();
-            
-        // })
     })
 }
 
@@ -370,14 +288,6 @@ async function updateEmployee(){
         .catch(error=>{
             throw error;
         })
-        // db.promise().query('UPDATE employee SET WHERE?', {last_name: answer.employee}, {role_id: roleIndex+1}, (err,res)=>{
-        //     if(err){
-        //         res.status(400).json({message: 'error!'});
-        //     } else{
-        //         console.table('All Employees:',res);
-        //         trackerPrompt();
-        //     }
-        // })
     })
 }
 
