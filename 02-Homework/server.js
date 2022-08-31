@@ -157,8 +157,9 @@ function addDepartment() {
     })
 }
 
-var deptList= [];
-function departmentList(){
+//var deptList= [];
+async function departmentList(){
+    var deptList= [];
     db.promise().query('SELECT * FROM department')
     .then(([res])=>{
         for(var i=0; i<res.length;i++){
@@ -181,7 +182,8 @@ function departmentList(){
     // return deptList;
 }
 
-function addRole(){
+async function addRole(){
+    let departments = await departmentList();
     inquirer.prompt([
         {
             name: 'roleName',
@@ -197,10 +199,10 @@ function addRole(){
             name: 'department',
             type: 'list',
             message: 'choose department',
-            choices: departmentList()
+            choices: departments
         }
     ]).then (function (answer){
-        let deptIndex= departmentList().indexOf(answer.department);
+        let deptIndex= departments.indexOf(answer.department);
         const sql= 'INSERT INTO role SET?';
         const params= 
             {
@@ -255,8 +257,9 @@ async function employeeList(){
     // return empList;
 }
 
-var roles=[];
-function roleList(){
+//var roles=[];
+async function roleList(){
+    var roles=[];
     db.promise().query('SELECT * FROM role')
     .then(([res])=>{
         for(var i=0; i<res.length;i++){
@@ -279,7 +282,9 @@ function roleList(){
     // return roles;
 }
 
-function addEmployee(){
+async function addEmployee(){
+    let employees = await employeeList();
+    let roles= await roleList();
     inquirer.prompt([
         {
             name: 'firstName',
@@ -295,19 +300,19 @@ function addEmployee(){
             name: 'manager',
             type: 'list',
             message: 'select manager:',
-            choices: employeeList()
+            choices: employees
         },
         {
             name: 'role',
             type: 'list',
             message: 'select role:',
-            choices: roleList()
+            choices: roles
         }
 
     ])
     .then (function (answer){
-        let managerIndex= employeeList().indexOf(answer.manager);
-        let roleIndex=roleList().indexOf(answer.role);
+        let managerIndex= employees.indexOf(answer.manager);
+        let roleIndex=roles.indexOf(answer.role);
         const sql= 'INSERT INTO employee SET?';
         const params= 
             {
@@ -336,7 +341,8 @@ function addEmployee(){
 }
 
 async function updateEmployee(){
-    let employees = await employeeList()
+    let employees = await employeeList();
+    let roles= await roleList();
     inquirer.prompt([
         {
             name: 'employee',
@@ -348,12 +354,15 @@ async function updateEmployee(){
             name: 'role',
             type: 'list',
             message: 'select new role:',
-            choices: roleList()
+            choices: roles
         }
     ])
     .then (function(answer){
-        let roleIndex=roleList().indexOf(answer.role);
-        db.promise().query('UPDATE employee SET WHERE?', {last_name: answer.employee}, {role_id: roleIndex+1})
+        let roleIndex=roles.indexOf(answer.role);
+
+        const sql= 'UPDATE employee SET role_id=? WHERE last_name=?';
+        const params= [roleIndex+1, answer.employee];
+        db.promise().query(sql, params)
         .then(([res])=>{
             console.table('All Employees:',res);
             trackerPrompt();
